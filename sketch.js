@@ -112,7 +112,7 @@ function draw() {
     else if (width < 600) textSize(15);
     else if (width > 399) textSize(50);
     text(
-      "Place your phone on a table \n spin it to choose your background!",
+      "Spin your phone \n to choose the background!",
       windowWidth / 2,
       windowHeight / 2
     );
