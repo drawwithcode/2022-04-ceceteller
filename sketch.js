@@ -1,14 +1,3 @@
-/*un disegno guidato step by step dove il "bambino" può prima impostare il suo 
-colore di sfondo: ruotando il dispositivo sceglie la gamma, muovendolo mappa il 
-colore di quella gamma fra diverse sfumature.
-poi ci disegna sopra soffiando nel microfono e facendo spostare il puntino
-sliders per scegliere dimensione del tratto e colore
-
-possibilità di selezionare fra delle immagini per avere uno sfondo
-e disegnarci sopra con la face mesh
-
-*/
-
 //ruota sfondi
 const backgrounds = [
   "#ff4040",
