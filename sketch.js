@@ -7,55 +7,6 @@ sliders per scegliere dimensione del tratto e colore
 possibilità di selezionare fra delle immagini per avere uno sfondo
 e disegnarci sopra con la face mesh
 
-
-
-let facemesh;
-let video;
-let predictions = [];
-
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  sfondo = map(mouseX, 0, width, backgrounds[0], backgrounds[10]);
-
-  detailX = createSlider(0);
-  detailX.position(50, windowHeight - 80);
-  detailX.style("width", "25%");
-
-  detailY = createSlider(0);
-  detailY.position(50, windowHeight - 50);
-  detailY.style("width", "25%");
-
-  video = createCapture(VIDEO);
-  video.size(width, height);
-
-  facemesh = ml5.facemesh(video);
-  facemesh.on("face", updatePredictions);
-
-  video.hide();
-}
-
-function draw() {
-  background(100);
-  drawLandmarks();
-}
-
-// Draw ellipses over the detected landmarks
-function drawLandmarks() {
-  for (let i = 0; i < predictions.length; i += 1) {
-    const keypoints = predictions[i].scaledMesh;
-
-    // Draw facial keypoints.
-    for (let j = 0; j < keypoints.length; j += 1) {
-      const [x, y] = keypoints[j];
-
-      fill(color("tomato"));
-      ellipse(x, y, 5, 5);
-    }
-  }
-}
-function updatePredictions(results) {
-  predictions = results;
-}
 */
 
 //ruota sfondi
@@ -70,7 +21,21 @@ const backgrounds = [
   "#582afc",
   "#a703d5",
   "#e70b8d",
-  "#ff4040",
+];
+
+const pens = [
+  [166, 206, 227, 50],
+  [31, 120, 180, 50],
+  [178, 223, 138, 50],
+  [51, 160, 44, 50],
+  [251, 154, 153, 50],
+  [227, 26, 28, 50],
+  [253, 191, 111, 50],
+  [255, 127, 0, 50],
+  [202, 178, 214, 50],
+  [202, 178, 214, 50],
+  [255, 255, 153, 50],
+  [177, 89, 4, 50],
 ];
 
 let video;
@@ -82,35 +47,45 @@ let noseY;
 let pNoseX;
 let pNoseY;
 let bottone;
-
+let bottone2;
 let fase1 = true;
 
 let lineCol;
 let myColor;
 let micLevel;
 
+let myIncrement;
+let myFont1;
+var cnv;
+
+var strokeColor = 0;
+
 function setup() {
   //imposto tela
-  createCanvas(windowWidth, windowHeight);
-
+  cnv = createCanvas(windowWidth, windowHeight);
+  centerCanvas();
   //imposto bottone
-  bottone = createElement("button", "Start!");
-
+  bottone = createElement("button", "START");
+  bottone2 = createElement("button", "CHANGE NOSE COLOR");
+  //imposto la ripresa della camera
   video = createCapture(VIDEO);
   video.size(width, height);
 
+  //disegno la tela per disegnare solo la linea del naso
   pg = createGraphics(width, height);
 
-  // Create a new poseNet method with a single detection
+  //imposto il modello sul poseNet di ml5
   poseNet = ml5.poseNet(video, modelReady);
-
   poseNet.on("pose", function (results) {
     poses = results;
   });
-  setShakeThreshold(10);
+  angleMode(DEGREES);
 
-  // Hide the video element, and just show the canvas
+  //nascondo la ripresa video e lascio visibile solo la canva
   video.hide();
+
+  myFont1 = loadFont("fonts/TINY5x3-80.otf");
+  myFont2 = loadFont("fonts/TINY5x3-120.otf");
 }
 
 function draw() {
@@ -119,26 +94,103 @@ function draw() {
     bgcol = map(rotationZ, 0, 360, 0, 10);
     background(backgrounds[round(bgcol)]);
 
+    let arcX = windowWidth / 2;
+    let arcY = windowHeight - (windowHeight - 80);
+    let arcRadius = width / 4;
+
+    myIncrement = 360 / 10;
+
+    push();
+
+    for (i = 0; i < 10; i++) {
+      fill(backgrounds[i]);
+      arc(
+        arcX,
+        arcY,
+        arcRadius,
+        arcRadius,
+        myIncrement * i,
+        myIncrement * (i + 1)
+      );
+    }
+
     //testo di introduzione
-    fill("black");
+    fill("white");
     textAlign(CENTER);
+    textFont(myFont2);
+
+    if (width < 400) textSize(30);
+    else if (width < 600) textSize(15);
+    else if (width > 399) textSize(50);
     text(
-      "Place your phone on a table and spin it to chose your background!",
+      "Place your phone on a table \n spin it to choose your background!",
+      windowWidth / 2,
+      windowHeight / 2
+    );
+    //callback function per il bottone
+    rectMode(CENTER);
+
+    bottone.style("position", "absolute");
+    bottone.style("bottom", "20px");
+    bottone.style("left", "20px");
+    bottone.style("padding", "10px");
+    //bottone.style("padding-bottom", "20px");
+
+    bottone.style("text-align", "center");
+    bottone.style("font-family", "TINY5x3-120");
+    bottone.style("font-size", "18px");
+
+    bottone.mousePressed(noseDraw);
+
+    bottone2.style("position", "absolute");
+    bottone2.style("bottom", "20px");
+    bottone2.style("right", "20px");
+    bottone2.style("padding", "10px");
+    // bottone2.style("padding-bottom", "5px");
+
+    bottone2.style("text-align", "center");
+    bottone2.style("font-family", "TINY5x3-120");
+    bottone2.style("font-size", "18px");
+  } else {
+    //fisso il bg con l'ultimo colore visualizzato
+    background(backgrounds[round(bgcol)]);
+    bottone2.mousePressed(changeColor);
+    //nascondo il bottone
+    bottone.hide();
+    rectMode(CORNER);
+    fill("white");
+
+    textFont(myFont2);
+
+    if (width < 400) textSize(30);
+    else if (width < 600) textSize(40);
+    else if (width > 399) textSize(50);
+    text("Draw with nose!", 85, windowHeight - (windowHeight - 20));
+
+    textFont(myFont1);
+    if (width < 400) textSize(30);
+    else if (width < 600) textSize(40);
+    else if (width > 399) textSize(50);
+    text(
+      "(and with code)",
+      windowWidth - 85,
+      windowHeight - (windowHeight - 20)
+    );
+
+    fill("black");
+
+    textFont(myFont2);
+    if (width < 400) textSize(30);
+    else if (width < 600) textSize(40);
+    else if (width > 399) textSize(50);
+    text(
+      "Shake the phone \nto clean your drawing",
       windowWidth / 2,
       windowHeight / 2
     );
 
-    //callback function per il bottone
-    bottone.position(windowWidth / 2, windowHeight / 2);
-    bottone.mousePressed(noseDraw);
-  } else {
-    //fisso il bg con l'ultimo colore visualizzato
-    background(backgrounds[round(bgcol)]);
-
-    //nascondo il bottone
-    bottone.hide();
-
     //flippo la traccia della registrazione camera per visualizzarla a specchio
+
     translate(video.width, 0);
     scale(-1, 1);
     image(pg, 0, 0, width, height);
@@ -156,23 +208,25 @@ function noseDraw() {
 // funzione per disegnare sui keypoints del naso
 function drawKeypoints() {
   // loop di tutte le posizioni rilevate
-  for (let i = 0; i < min(poses.length, 1); i = i + 10) {
+  for (let i = 0; i < min(poses.length, 1); i = i + 4) {
     // loop di tutti i keypoints per ogni posizione rilevata
-    for (let j = 0; j < poses[i].pose.keypoints.length; j = j + 10) {
+    for (let j = 0; j < poses[i].pose.keypoints.length; j = j + 4) {
       // un keypoint è un'ellisse che descrive una parte del corpo
       let keypoint = poses[i].pose.keypoints[j];
       // tolleranza della traccia del punto
-      if (keypoint.score > 0.9) {
+      if (keypoint.score > 0.2) {
         if (j == 0) {
           noseX = keypoint.position.x;
           noseY = keypoint.position.y;
 
           //disegno della linea
-          pg.stroke(255, 50);
+
+          pg.stroke(pens[strokeColor]);
+
+          //dimensione della traccia in base al volume rilevato
           if (mic) {
             micLevel = mic.getLevel();
-            let myLine = map(micLevel, 0, 1, 10, width);
-
+            let myLine = map(micLevel, 0, 1, 25, pg.width);
             pg.strokeWeight(myLine);
           }
           pg.line(noseX, noseY, pNoseX, pNoseY);
@@ -185,7 +239,6 @@ function drawKeypoints() {
   }
 }
 
-// The callback that gets called every time there's an update from the model
 function gotPoses(results) {
   poses = results;
 }
@@ -205,5 +258,19 @@ function mousePressed() {
 function touchEnded(event) {
   if (DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) {
     DeviceOrientationEvent.requestPermission();
+  }
+}
+
+function centerCanvas() {
+  var x = (windowWidth - width) / 2;
+  var y = (windowHeight - height) / 2;
+  cnv.position(x, y);
+}
+
+function changeColor() {
+  if (strokeColor < pens.length - 1) {
+    strokeColor++;
+  } else {
+    strokeColor = 0;
   }
 }
